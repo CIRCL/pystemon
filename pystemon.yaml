@@ -14,7 +14,7 @@ db:
     file: 'db.sqlite3'  # The filename of the database
 
 redis:
-  queue: no
+  queue: no             # Toggle PUSH to redis queue
   server: "localhost"
   port: 6379
   database: 10
@@ -86,10 +86,11 @@ site:
     update-max: 50
     update-min: 40
 
-  pastie.org:
-    archive-url: 'http://pastie.org/pastes'
-    archive-regex: '<a href="http://pastie.org/pastes/(\d{7})">'
-    download-url: 'http://pastie.org/pastes/{id}/text'
+# Site seems offline now
+#  pastie.org:
+#    archive-url: 'http://pastie.org/pastes'
+#    archive-regex: '<a href="http://pastie.org/pastes/(\d{7})">'
+#    download-url: 'http://pastie.org/pastes/{id}/text'
 
 # Site seems offline now
 #  nopaste.me:

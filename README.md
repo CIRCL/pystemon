@@ -23,7 +23,8 @@ Features:
 Python Dependencies
 -------------------
 * PyYAML
-* BeautifulSoup
+* requests
+* redis
 
 Limitations:
 ------------
@@ -43,4 +44,4 @@ Options:
       -v                    outputs more information  
 
 Default configuration file: /etc/pystemon.yaml or pystemon.yaml in current directory
-``` 
+```
