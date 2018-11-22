@@ -79,12 +79,13 @@ site:
     update-min: 40
 
   # See https://pastebin.com/api_scraping_faq , you will need a pro account on pastebin
-  pastebin.com_pro:
-    archive-url: 'http://pastebin.com/api_scraping.php?limit=500'
-    archive-regex: '"key": "(.+)",'
-    download-url: 'http://pastebin.com/api_scrape_item.php?i={id}'
-    update-max: 50
-    update-min: 40
+  # Further on, the API has changed. Needs updating. FIXME
+  ##  pastebin.com_pro:
+  ##  archive-url: 'http://pastebin.com/api_scraping.php?limit=500'
+  ##  archive-regex: '"key": "(.+)",'
+  ##  download-url: 'http://pastebin.com/api_scrape_item.php?i={id}'
+  ##  update-max: 50
+  ##  update-min: 40
 
 # Site seems offline now
 #  pastie.org:
