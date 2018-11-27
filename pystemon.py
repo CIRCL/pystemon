@@ -437,8 +437,18 @@ def main():
         threads.append(db)
         db.start()
     # test()
-    # spawn a pool of threads per PastieSite, and pass them a queue instance
+    # Build array of enabled sites.
+    sites_enabled = []
     for site in yamlconfig['site']:
+        if yamlconfig['site'][site]['enable']:
+            print("Site: {} is enabled, adding to pool...".format(site))
+            sites_enabled.append(site)
+        elif not yamlconfig['site'][site]['enable']:
+            print("Site: {} is disabled.".format(site))
+        else:
+            print("Site: {} is not enabled or disabled in config file. We just assume it disabled.".format(site))
+    # spawn a pool of threads per PastieSite, and pass them a queue instance
+    for site in sites_enabled:
         queues[site] = Queue()
         for i in range(yamlconfig['threads']):
             t = ThreadPasties(queues[site], site)
@@ -447,7 +457,7 @@ def main():
             t.start()
 
     # build threads to download the last pasties
-    for site_name in yamlconfig['site']:
+    for site_name in sites_enabled:
         t = PastieSite(site_name,
                        yamlconfig['site'][site_name]['download-url'],
                        yamlconfig['site'][site_name]['archive-url'],
@@ -771,7 +781,6 @@ if __name__ == "__main__":
         config_file = filename.replace('.py', '.yaml')
         if os.path.isfile(config_file):
             options.config = config_file
-        print(options.config)
     if not os.path.isfile(options.config):
         parser.error('Configuration file not found. Please create /etc/pystemon.yaml, pystemon.yaml or specify a config file using the -c option.')
         exit(1)

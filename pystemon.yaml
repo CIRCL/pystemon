@@ -72,55 +72,48 @@ site:
 #                       # This is practical for sites that require custom fetchPastie() functions
 
   pastebin.com:
+    enable: yes
     archive-url: 'http://pastebin.com/archive'
     archive-regex: '<a href="/(\w{8})">.+</a></td>'
     download-url: 'http://pastebin.com/raw.php?i={id}'
     update-max: 50
     update-min: 40
 
-  # See https://pastebin.com/api_scraping_faq , you will need a pro account on pastebin
-  # You need to #whitelist you source IP and "Our scraping API is only available for LIFETIME PRO members, and only for those who have their IP whitelisted."
-  # Further on, the API has changed. Needs updating. FIXME
-  ##  pastebin.com_pro:
-  ##  archive-url: 'https://scrape.pastebin.com/api_scraping.php?limit=500'
-  ##  archive-regex: '"key": "(.+)",'
-  ##  download-url: 'http://pastebin.com/api_scrape_item.php?i={id}'
-  ##  update-max: 50
-  ##  update-min: 40
-
-# Site seems offline now
-#  pastie.org:
-#    archive-url: 'http://pastie.org/pastes'
-#    archive-regex: '<a href="http://pastie.org/pastes/(\d{7})">'
-#    download-url: 'http://pastie.org/pastes/{id}/text'
-
-# Site seems offline now
-#  nopaste.me:
-#    archive-url: 'http://nopaste.me/recent'
-#    archive-regex: '<a href="http://nopaste.me/paste/([a-zA-Z0-9]+)">'
-#    download-url: 'http://nopaste.me/download/{id}.txt'
+# See https://pastebin.com/api_scraping_faq , you will need a pro account on pastebin
+# You need to #whitelist you source IP and "Our scraping API is only available for LIFETIME PRO members, and only for those who have their IP whitelisted."
+  pastebin.com_pro:
+    enable: no
+    archive-url: 'https://scrape.pastebin.com/api_scraping.php?limit=500'
+    archive-regex: '"key": "(.+)",'
+    download-url: 'http://pastebin.com/api_scrape_item.php?i={id}'
+    update-max: 50
+    update-min: 40
 
   slexy.org:
+    enable: yes
     archive-url: 'http://slexy.org/recent'
     archive-regex: '<a href="/view/([a-zA-Z0-9]+)">View paste</a>'
     download-url: 'http://slexy.org/raw/{id}'
 
-#  gist.github.com:
-#    archive-url: 'https://gist.github.com/gists'
-#    archive-regex: '<span><a href="/([0-9]+)">gist'
-#    download-url: 'https://raw.github.com/gist/{id}'
+  gist.github.com:
+    enable: no
+    archive-url: 'https://gist.github.com/gists'
+    archive-regex: '<span><a href="/([0-9]+)">gist'
+    download-url: 'https://raw.github.com/gist/{id}'
 
   codepad.org:
+    enable: no
     archive-url: 'http://codepad.org/recent'
     archive-regex: '<a href="http://codepad.org/([a-zA-Z0-9]+)">view'
     download-url: 'http://codepad.org/{id}/raw.txt'
 
-#  safebin.net:  # FIXME not finished
-#    archive-url: 'http://safebin.net/?archive'
-#    archive-regex: '<a title="[a-zA-Z0-9 :,]+" href="/([0-9]+)">'
-#    download-url: 'http://safebin.net/{id}'
-#    update-max: 60
-#    update-min: 50
+  safebin.net:  # FIXME not finished
+    enable: no
+    archive-url: 'http://safebin.net/?archive'
+    archive-regex: '<a title="[a-zA-Z0-9 :,]+" href="/([0-9]+)">'
+    download-url: 'http://safebin.net/{id}'
+    update-max: 60
+    update-min: 50
 
 
 # TODO
