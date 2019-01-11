@@ -25,3 +25,6 @@ pip-log.txt
 /.pydevproject
 /archive
 /alerts
+
+proxies.txt
+
