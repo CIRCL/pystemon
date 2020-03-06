@@ -41,6 +41,9 @@ import threading
 import time
 import urllib
 import urllib2
+import httplib
+import ssl
+
 try:
     import redis
 except:
@@ -57,6 +60,7 @@ try:
 except:
     exit('You need python version 2.7 or newer.')
 
+retries_paste  = 3
 retries_client = 5
 retries_server = 100
 
@@ -66,7 +70,7 @@ true_socket = socket.socket
 
 def make_bound_socket(source_ip):
     def bound_socket(*a, **k):
-	sock = true_socket(*a, **k)
+        sock = true_socket(*a, **k)
 	sock.bind((source_ip, 0))
         return sock
     return bound_socket
@@ -78,7 +82,7 @@ class PastieSite(threading.Thread):
     the most recent pastes and added those to the download queue.
     '''
     def __init__(self, name, download_url, archive_url, archive_regex):
-	threading.Thread.__init__(self)
+        threading.Thread.__init__(self)
 	self.kill_received = False
 
 	self.name = name
@@ -106,7 +110,7 @@ class PastieSite(threading.Thread):
 
     def run(self):
 	while not self.kill_received:
-	    sleep_time = random.randint(self.update_min, self.update_max)
+            sleep_time = random.randint(self.update_min, self.update_max)
             try:
                 # grabs site from queue
                 logger.info(
@@ -154,6 +158,9 @@ class PastieSite(threading.Thread):
                     pastie = Pastie(self, pastie_id)
                 pasties.append(pastie)
             return pasties
+        if "DOES NOT HAVE ACCESS" in htmlPage.encode('utf8'):
+            print("Problem with configured IP address")
+
         logger.error("No last pasties matches for regular expression site:{site} regex:{regex}. Error in your regex? Dumping htmlPage \n {html}".format(site=self.name, regex=self.archive_regex, html=htmlPage.encode('utf8')))
         return False
 
@@ -219,6 +226,7 @@ class Pastie():
         self.matches = []
         self.md5 = None
         self.url = self.site.download_url.format(id=self.id)
+        self.public = False
 
     def hash_pastie(self):
         if self.pastie_content:
@@ -244,12 +252,6 @@ class Pastie():
             f.flush()
             os.fsync(f.fileno())
             f.close()
-            statinfo = os.stat(full_path)
-            print full_path + ": " + str(statinfo)
-            test = open(full_path, 'r')
-            f.close()
-            statinfo = os.stat(full_path)
-            print full_path + ": " + str(statinfo)
         else:
             f = open(full_path, 'w')
             f.write(self.pastie_content.encode('utf8'))
@@ -301,6 +303,10 @@ class Pastie():
                     continue
                 # we have a match, add to match list
                 self.matches.append(regex)
+                if 'public' in regex:
+                    self.public = regex['public']
+                else:
+                    self.public = False
         if self.matches:
             self.action_on_match()
 
@@ -341,7 +347,10 @@ class Pastie():
 
     def send_email_alert(self):
         msg = MIMEMultipart()
-        alert = "Found hit for {matches} in pastie {url}".format(matches=self.matches_to_text(), url=self.url)
+        if self.public: 
+            alert = "Found hit for {matches} in pastie {url}".format(matches=self.matches_to_text(), url=self.url)
+        else:
+            alert = "Found hit in pastie {url}".format(url=self.url)
         # headers
         msg['Subject'] = yamlconfig['email']['subject'].format(subject=alert)
         msg['From'] = yamlconfig['email']['from']
@@ -351,20 +360,21 @@ class Pastie():
         for match in self.matches:                    # per match, the custom additional email
             if 'to' in match and match['to']:
                 recipients.extend(match['to'].split(","))
-        msg['To'] = ','.join(recipients)  # here the list needs to be comma separated
+        msg['Bcc'] = ','.join(recipients)  # here the list needs to be comma separated
         # message body including full paste rather than attaching it
         message = '''
 I found a hit for a regular expression on one of the pastebin sites.
 
 The site where the paste came from :        {site}
 The original paste was located here:        {url}
-And the regular expressions that matched:   {matches}
+And the regular expressions that matched:   [redacted]
 
 Below (after newline) is the content of the pastie:
 
 {content}
 
-        '''.format(site=self.site.name, url=self.url, matches=self.matches_to_regex(), content=self.pastie_content.encode('utf8'))
+        '''.format(site=self.site.name, url=self.url, content=self.pastie_content.encode('utf8'))
+        #'''.format(site=self.site.name, url=self.url, matches=self.matches_to_regex(), content=self.pastie_content.encode('utf8'))
         msg.attach(MIMEText(message))
         # send out the mail
         try:
@@ -618,8 +628,35 @@ class NoRedirectHandler(urllib2.HTTPRedirectHandler):
         return infourl
     http_error_301 = http_error_303 = http_error_307 = http_error_302
 
+class TLS1Connection(httplib.HTTPSConnection):
+    """Like HTTPSConnection but more specific"""
+    def __init__(self, host, **kwargs):
+        httplib.HTTPSConnection.__init__(self, host, **kwargs)
 
-def download_url(url, data=None, cookie=None, loop_client=0, loop_server=0):
+    def connect(self):
+        """Overrides HTTPSConnection.connect to specify TLS version"""
+        # Standard implementation from HTTPSConnection, which is not
+        # designed for extension, unfortunately
+        sock = socket.create_connection((self.host, self.port),
+                self.timeout, self.source_address)
+        if getattr(self, '_tunnel_host', None):
+            self.sock = sock
+            self._tunnel()
+
+        # This is the only difference; default wrap_socket uses SSLv23
+        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
+                ssl_version=ssl.PROTOCOL_TLSv1)
+
+class TLS1Handler(urllib2.HTTPSHandler):
+    """Like HTTPSHandler but more specific"""
+    def __init__(self):
+        urllib2.HTTPSHandler.__init__(self)
+
+    def https_open(self, req):
+        return self.do_open(TLS1Connection, req)
+
+
+def download_url(url, data=None, cookie=None, loop_client=0, loop_server=0, loop_paste=0):
     # Client errors (40x): if more than 5 recursions, give up on URL (used for the 404 case)
     if loop_client >= retries_client:
         return None, None
@@ -628,6 +665,9 @@ def download_url(url, data=None, cookie=None, loop_client=0, loop_server=0):
         return None, None
     try:
         opener = None
+        #urllib2.install_opener(urllib2.build_opener(TLS1Handler()))
+
+
         # Random Proxy if set in config
         random_proxy = get_random_proxy()
         if random_proxy:
@@ -651,10 +691,19 @@ def download_url(url, data=None, cookie=None, loop_client=0, loop_server=0):
         else:
             response = opener.open(url)
         htmlPage = unicode(response.read(), errors='replace')
+        if 'File is not ready for scraping yet. Try again in 1 minute.' in htmlPage:
+            if loop_paste >= retries_paste:
+                logger.warning("Tried to scrape too early for {url}, giving up and saving current content".format(url=url))
+                return htmlPage, response.headers
+            else:
+                loop_paste += 1
+                logger.warning("Tried to scrape too early for {url}, trying again in 60s ({nb}/{total})".format(url=url, nb=loop_paste, total=retries_paste))
+                time.sleep(60)
+                return download_url(url, loop_paste=loop_paste)
         return htmlPage, response.headers
     except urllib2.HTTPError, e:
         failed_proxy(random_proxy)
-        logger.warning("!!Proxy error on {0}.".format(url))
+        logger.warning("!!Proxy error on {url} for proxy {proxy}.".format(url=url, proxy=random_proxy))
         if 404 == e.code:
             htmlPage = e.read()
             logger.warning("404 from proxy received for {url}. Waiting 1 minute".format(url=url))
@@ -695,7 +744,7 @@ def download_url(url, data=None, cookie=None, loop_client=0, loop_server=0):
         logger.debug("ERROR: URL Error ##### {e} ######################## ".format(e=e, url=url))
         if random_proxy:  # remove proxy from the list if needed
             failed_proxy(random_proxy)
-            logger.warning("Failed to download the page because of proxy error {0} trying again.".format(url))
+            logger.warning("Failed to download the page {url} because of proxy error {proxy}. Trying again.".format(url=url, proxy=random_proxy))
             loop_server += 1
             logger.warning("Retry {nb}/{total} for {url}".format(nb=loop_server, total=retries_server, url=url))
             return download_url(url, loop_server=loop_server)
@@ -870,7 +919,7 @@ if __name__ == "__main__":
         exit(1)
 
     logger = logging.getLogger('pystemon')
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     hdlr = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter('[%(asctime)s] %(message)s')
     hdlr.setFormatter(formatter)
