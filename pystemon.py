@@ -67,7 +67,7 @@ except ImportError:
 try:
     if sys.version_info < (2, 7):
         exit('You need python version 2.7 or newer.')
-except:
+except Exception as exc:
     exit('You need python version 2.7 or newer.')
 
 retries_paste = 3
@@ -102,7 +102,7 @@ class PastieSite(threading.Thread):
         try:
             self.ip_addr = yamlconfig['network']['ip']
             socket.socket = make_bound_socket(self.ip_addr)
-        except:
+        except Exception as exc:
             logger.debug("Using default IP address")
 
         self.save_dir = yamlconfig['archive']['dir'] + os.sep + name
@@ -460,7 +460,7 @@ def main():
         try:
             global sqlite3
             import sqlite3
-        except:
+        except Exception as exc:
             exit('ERROR: Cannot import the sqlite3 Python library. Are you sure it is compiled in python?')
         db = Sqlite3Database(yamlconfig['db']['sqlite3']['file'])
         db.setDaemon(True)
