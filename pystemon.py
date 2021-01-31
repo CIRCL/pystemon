@@ -66,7 +66,7 @@ except ImportError:
 
 try:
     if sys.version_info < (2, 7):
-	exit('You need python version 2.7 or newer.')
+        exit('You need python version 2.7 or newer.')
 except:
     exit('You need python version 2.7 or newer.')
 
@@ -81,7 +81,7 @@ true_socket = socket.socket
 def make_bound_socket(source_ip):
     def bound_socket(*a, **k):
         sock = true_socket(*a, **k)
-	sock.bind((source_ip, 0))
+        sock.bind((source_ip, 0))
         return sock
     return bound_socket
 
@@ -93,32 +93,32 @@ class PastieSite(threading.Thread):
     '''
     def __init__(self, name, download_url, archive_url, archive_regex):
         threading.Thread.__init__(self)
-	self.kill_received = False
+        self.kill_received = False
 
-	self.name = name
-	self.download_url = download_url
-	self.archive_url = archive_url
-	self.archive_regex = archive_regex
-	try:
+        self.name = name
+        self.download_url = download_url
+        self.archive_url = archive_url
+        self.archive_regex = archive_regex
+        try:
             self.ip_addr = yamlconfig['network']['ip']
             socket.socket = make_bound_socket(self.ip_addr)
-	except:
-	    logger.debug("Using default IP address")
+        except:
+            logger.debug("Using default IP address")
 
-	self.save_dir = yamlconfig['archive']['dir'] + os.sep + name
-	self.archive_dir = yamlconfig['archive']['dir-all'] + os.sep + name
-	if yamlconfig['archive']['save'] and not os.path.exists(self.save_dir):
+        self.save_dir = yamlconfig['archive']['dir'] + os.sep + name
+        self.archive_dir = yamlconfig['archive']['dir-all'] + os.sep + name
+        if yamlconfig['archive']['save'] and not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
-	if yamlconfig['archive']['save-all'] and not os.path.exists(self.archive_dir):
-	    os.makedirs(self.archive_dir)
-	self.archive_compress = yamlconfig['archive']['compress']
-	self.update_max = 30  # TODO set by config file
+        if yamlconfig['archive']['save-all'] and not os.path.exists(self.archive_dir):
+            os.makedirs(self.archive_dir)
+        self.archive_compress = yamlconfig['archive']['compress']
+        self.update_max = 30  # TODO set by config file
         self.update_min = 10  # TODO set by config file
         self.pastie_classname = None
-	self.seen_pasties = deque('', 1000)  # max number of pasties ids in memory
+        self.seen_pasties = deque('', 1000)  # max number of pasties ids in memory
 
     def run(self):
-	while not self.kill_received:
+        while not self.kill_received:
             sleep_time = random.randint(self.update_min, self.update_max)
             try:
                 # grabs site from queue
