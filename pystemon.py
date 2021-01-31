@@ -49,10 +49,10 @@ import ssl
 from io import open
 import requests
 
-#try:
-#    from urllib.error import HTTPError, URLError
-#except ImportError:
-#    from urllib2 import HTTPError, URLError
+# try:
+#     from urllib.error import HTTPError, URLError
+# except ImportError:
+#     from urllib2 import HTTPError, URLError
 
 try:
     import redis
@@ -70,7 +70,7 @@ try:
 except:
     exit('You need python version 2.7 or newer.')
 
-retries_paste  = 3
+retries_paste = 3
 retries_client = 5
 retries_server = 100
 
@@ -367,7 +367,7 @@ class Pastie():
 
     def send_email_alert(self):
         msg = MIMEMultipart()
-        if self.public: 
+        if self.public:
             alert = "Found hit for {matches} in pastie {url}".format(matches=self.matches_to_text(), url=self.url)
         else:
             alert = "Found hit in pastie {url}".format(url=self.url)
@@ -394,7 +394,7 @@ Below (after newline) is the content of the pastie:
 {content}
 
         '''.format(site=self.site.name, url=self.url, content=self.pastie_content.encode('utf8'))
-        #'''.format(site=self.site.name, url=self.url, matches=self.matches_to_regex(), content=self.pastie_content.encode('utf8'))
+        # '''.format(site=self.site.name, url=self.url, matches=self.matches_to_regex(), content=self.pastie_content.encode('utf8'))
         msg.attach(MIMEText(message))
         # send out the mail
         try:
@@ -587,6 +587,7 @@ class NoRedirectHandler(urllib2.HTTPRedirectHandler):
         return infourl
     http_error_301 = http_error_303 = http_error_307 = http_error_302
 
+
 class TLS1Connection(httplib.HTTPSConnection):
     """Like HTTPSConnection but more specific"""
     def __init__(self, host, **kwargs):
@@ -596,15 +597,18 @@ class TLS1Connection(httplib.HTTPSConnection):
         """Overrides HTTPSConnection.connect to specify TLS version"""
         # Standard implementation from HTTPSConnection, which is not
         # designed for extension, unfortunately
-        sock = socket.create_connection((self.host, self.port),
-                self.timeout, self.source_address)
+        sock = socket.create_connection(
+            (self.host, self.port),
+            self.timeout, self.source_address)
         if getattr(self, '_tunnel_host', None):
             self.sock = sock
             self._tunnel()
 
         # This is the only difference; default wrap_socket uses SSLv23
-        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
-                ssl_version=ssl.PROTOCOL_TLSv1)
+        self.sock = ssl.wrap_socket(
+            sock, self.key_file, self.cert_file,
+            ssl_version=ssl.PROTOCOL_TLSv1)
+
 
 class TLS1Handler(urllib2.HTTPSHandler):
     """Like HTTPSHandler but more specific"""
@@ -636,8 +640,7 @@ def download_url(url, data=None, cookie=None, loop_client=0, loop_server=0, loop
     logger.debug('Downloading url: {url} with proxy: {proxy} and user-agent: {ua}'.format(url=url, proxy=random_proxy, ua=user_agent))
     try:
         opener = None
-        #urllib2.install_opener(urllib2.build_opener(TLS1Handler()))
-
+        # urllib2.install_opener(urllib2.build_opener(TLS1Handler()))
 
         # Random Proxy if set in config
         random_proxy = get_random_proxy()
